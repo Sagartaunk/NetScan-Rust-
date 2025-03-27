@@ -49,5 +49,47 @@ pub async fn single_ip_test(){
 
 pub async fn ip_range_test(){
     let (start , end) = cli::ip_range();
-    println!("Under development");
+    let ip_range = ip_range(start , end);
+    let open_ip = Arc::new(Mutex::new(Vec::new()));
+    let tasks : Vec<_> = ip_range
+        .into_iter()
+        .map(|ip| {
+            let open_ip = Arc::clone(&open_ip);
+            tokio::spawn(async move {
+                let result = timeout(Duration::from_secs(3), TcpStream::connect(ip.clone())).await;
+                match result{
+                    Ok(_) => {
+                        println!("Ip {} is open" , ip);
+                        let mut  open_ip = open_ip.lock().unwrap();
+                        open_ip.push(ip);
+                    }
+                    Err(_) => {}
+                }
+            })
+        })
+        .collect();
+    futures::future::join_all(tasks).await;
+    save::save(open_ip.lock().unwrap().to_vec());
+
+}
+
+pub fn ip_range(start : String , end : String) -> Vec<String>{
+    let start = start.split(".").collect::<Vec<&str>>();
+    let end = end.split(".").collect::<Vec<&str>>();
+    let mut ip_range = Vec::new();
+    let start : [u8 ; 5] = [start[0].parse().unwrap() , start[1].parse().unwrap() , start[2].parse().unwrap() , start[3].parse().unwrap() , 80];
+    let end : [u8 ; 5] = [end[0].parse().unwrap() , end[1].parse().unwrap() , end[2].parse().unwrap() , end[3].parse().unwrap() , 80];
+    for i in start[0]..=end[0]{
+        for j in start[1]..=end[1]{
+            for k in start[2]..=end[2]{
+                for l in start[3]..=end[3]{
+                    ip_range.push([i , j , k , l , 80]);
+                }
+            }
+        }
+    }
+    ip_range.into_iter().map(|ip| {
+        format!("{}.{}.{}.{}:{}", ip[0] , ip[1] , ip[2] , ip[3] , ip[4])
+    }).collect()
+
 }
