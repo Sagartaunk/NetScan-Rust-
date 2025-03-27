@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
-use crate::{cli , save};
+use crate::{cli, ipscan, save};
 use tokio::net::TcpStream;
-use futures;
+use futures::{self, future};
 use tokio::time::{timeout, Duration};
+use rayon::prelude::*;
 
 pub async fn run(){
     let i = cli::option_input_ip();
@@ -91,5 +92,33 @@ pub fn ip_range(start : String , end : String) -> Vec<String>{
     ip_range.into_iter().map(|ip| {
         format!("{}.{}.{}.{}:{}", ip[0] , ip[1] , ip[2] , ip[3] , ip[4])
     }).collect()
+}
 
+pub async fn local_net(){
+    println!("Starting the scan");
+    let mut vec = Arc::new(Mutex::new(Vec::new()));
+    let tasks : Vec<_> = (1..=255).into_par_iter().map(|i| {
+        let vec = Arc::clone(&vec);
+        tokio::spawn(async move {
+            let range = 0..=9999 ; 
+            let task2 : Vec<_> = range.map(|j| {
+                let vec = Arc::clone(&vec);
+                tokio::spawn(async move {
+                    let ip = format!("192.168.1.{}:{}", i , j);
+                    let result = timeout(Duration::from_secs(3), TcpStream::connect(ip.clone())).await;
+                    match result{
+                        Ok(_) => {
+                            println!("Ip {} is open" , ip);
+                            let mut vec = vec.lock().unwrap();
+                            vec.push(ip);
+                        }
+                        Err(_) => {}
+                    }
+                })
+            }).collect();
+            futures::future::join_all(task2).await;
+        })
+    }).collect();
+    futures::future::join_all(tasks).await;
+    save::save(vec.lock().unwrap().to_vec());
 }
