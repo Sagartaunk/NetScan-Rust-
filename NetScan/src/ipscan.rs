@@ -10,6 +10,9 @@ pub async fn run(){
         1 => {
             single_ip_test().await;
         }
+        2 => {
+            ip_range_test().await;
+        }
         _ => {
             println!("Invalid option or under development");
         }
@@ -42,4 +45,9 @@ pub async fn single_ip_test(){
         .collect();
     futures::future::join_all(tasks).await;
     save::save(open_ports.lock().unwrap().to_vec());
+}
+
+pub async fn ip_range_test(){
+    let (start , end) = cli::ip_range();
+    println!("Under development");
 }

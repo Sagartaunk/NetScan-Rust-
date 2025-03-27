@@ -27,3 +27,13 @@ pub fn single_ip() -> (String , i64 , i64){
     let e_port : i64 = e_port.trim().parse().expect("Please enter a valid port number");
     (ip.trim().to_string() , s_port , e_port)
 }
+
+pub fn ip_range() -> (String , String){
+    let mut s_ip = String::new();
+    let mut e_ip = String::new();
+    println!("Please enter the starting ip address : ");
+    io::stdin().read_line(&mut s_ip).expect("Failed to read line");
+    println!("Please enter the ending ip address : ");
+    io::stdin().read_line(&mut e_ip).expect("Failed to read line");
+    (s_ip.trim().to_string() , e_ip.trim().to_string())
+}
