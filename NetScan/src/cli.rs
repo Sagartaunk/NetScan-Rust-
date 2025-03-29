@@ -37,3 +37,16 @@ pub fn ip_range() -> (String , String){
     io::stdin().read_line(&mut e_ip).expect("Failed to read line");
     (s_ip.trim().to_string() , e_ip.trim().to_string())
 }
+
+pub fn domain() -> (String , u8){
+    println!("Please enter the url you want to crawl : ");
+    let mut url = String::new();
+    io::stdin().read_line(&mut url).expect("Failed to read url");
+    let url = url.trim().to_string();
+    println!("Please enter the max depth you want to crawl : ");
+    let mut max_depth = String::new();
+    io::stdin().read_line(&mut max_depth).expect("Failed to read max depth");
+    let max_depth : u8 = max_depth.trim().parse().expect("Please enter a valid depth");
+    (url,max_depth)
+    
+}

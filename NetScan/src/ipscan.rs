@@ -1,9 +1,9 @@
 use std::sync::{Arc, Mutex};
-use crate::{cli, ipscan, save};
+use crate::{cli, save};
 use tokio::net::TcpStream;
-use futures::{self, future};
+use futures::future;
 use tokio::time::{timeout, Duration};
-use rayon::prelude::*;
+
 
 pub async fn run(){
     let i = cli::option_input_ip();
@@ -13,6 +13,9 @@ pub async fn run(){
         }
         2 => {
             ip_range_test().await;
+        }
+        3=> {
+            local_net().await;
         }
         _ => {
             println!("Invalid option or under development");
@@ -44,7 +47,7 @@ pub async fn single_ip_test(){
             })
         })
         .collect();
-    futures::future::join_all(tasks).await;
+    future::join_all(tasks).await;
     save::save(open_ports.lock().unwrap().to_vec());
 }
 
@@ -69,7 +72,7 @@ pub async fn ip_range_test(){
             })
         })
         .collect();
-    futures::future::join_all(tasks).await;
+    future::join_all(tasks).await;
     save::save(open_ip.lock().unwrap().to_vec());
 
 }
@@ -96,29 +99,22 @@ pub fn ip_range(start : String , end : String) -> Vec<String>{
 
 pub async fn local_net(){
     println!("Starting the scan");
-    let mut vec = Arc::new(Mutex::new(Vec::new()));
-    let tasks : Vec<_> = (1..=255).into_par_iter().map(|i| {
+    let vec = Arc::new(Mutex::new(Vec::new()));
+    let tasks : Vec<_> = (1..=255).into_iter().map(|i| {
         let vec = Arc::clone(&vec);
         tokio::spawn(async move {
-            let range = 0..=9999 ; 
-            let task2 : Vec<_> = range.map(|j| {
-                let vec = Arc::clone(&vec);
-                tokio::spawn(async move {
-                    let ip = format!("192.168.1.{}:{}", i , j);
-                    let result = timeout(Duration::from_secs(3), TcpStream::connect(ip.clone())).await;
-                    match result{
-                        Ok(_) => {
-                            println!("Ip {} is open" , ip);
-                            let mut vec = vec.lock().unwrap();
-                            vec.push(ip);
-                        }
-                        Err(_) => {}
-                    }
-                })
-            }).collect();
-            futures::future::join_all(task2).await;
+            let ip = format!("192.168.1.{}:80" , i);
+            let result = timeout(Duration::from_secs(3), TcpStream::connect(ip.clone())).await;
+            match result{
+                Ok(_) => {
+                    println!("Ip {} is open" , ip);
+                    let mut vec = vec.lock().unwrap();
+                    vec.push(ip);
+                }
+                Err(_) => {}
+            }
         })
     }).collect();
-    futures::future::join_all(tasks).await;
+    future::join_all(tasks).await;
     save::save(vec.lock().unwrap().to_vec());
 }
