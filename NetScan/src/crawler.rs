@@ -66,6 +66,5 @@ pub async fn parse(url : String) -> Vec<String>{
             }
         }
     }
-    println!("Found {} links", links.len());
     links
 }

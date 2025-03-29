@@ -5,7 +5,7 @@ pub fn option_input_ip() -> u8 {
     println!("Please select one of the following options :");
     println!("1. Scan a single IP address for open ports");
     println!("2. Scan a range of IP addresses");
-    println!("3. Scan a subnet for open ports");
+    println!("3. Scan a Local network for open ip's");
     let mut input = String::new();
     io::stdin().read_line(&mut input).expect("Failed to read line");
     let input : u8 = input.trim().parse().expect("Please enter a valid input");
